@@ -1,24 +1,31 @@
 "use strict";
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const Promise = require("bluebird");
-const admin = require("firebase-admin");
-let options = {
+const es6_promise_1 = require("es6-promise");
+const admin = __importStar(require("firebase-admin"));
+let __options = {
     pathToServiceAccountKey: '',
     databaseUrl: '',
     fnGetFirebaseTokenForUser: function (userId) {
-        return Promise.resolve(userId);
+        return es6_promise_1.Promise.resolve(userId);
     },
     fnSendPushNotificationDefaultErrorHandler: function (err, userId) {
         console.error(`Error sending push notification to user with ID ${userId}:`);
         console.error(err);
     }
 };
-function sendPushNotification(userId, title, body) {
+function sendPushNotification(options) {
     let firebaseToken;
-    if (!options.fnGetFirebaseTokenForUser) {
+    if (!__options.fnGetFirebaseTokenForUser) {
         throw new Error('CANT_FIND_fnGetFirebaseTokenForUser');
     }
-    return options.fnGetFirebaseTokenForUser(userId)
+    return __options.fnGetFirebaseTokenForUser(options.userId)
         .then((_firebaseToken) => {
         if (!_firebaseToken) {
             throw new Error('NO_FIREBASE_TOKEN_FOR_USER');
@@ -28,19 +35,42 @@ function sendPushNotification(userId, title, body) {
         .then(() => {
         let message = {
             notification: {
-                title,
-                body
+                title: options.title,
+                body: options.body
             },
             token: firebaseToken
         };
+        if (options.media) {
+            message.data = {
+                // TODO {AD} likely only mediaUrl or 'attachment-url' are required. Figure this out.
+                mediaUrl: options.media.url,
+                'attachment-url': options.media.url,
+                message: options.body,
+                media_type: options.media.type
+            };
+            // Support for rich notifications on iOS
+            message.apns = {
+                payload: {
+                    aps: {
+                        contentAvailable: true,
+                        mutableContent: true,
+                        sound: 'default',
+                        alert: {
+                            body: options.body,
+                            title: options.title
+                        }
+                    }
+                }
+            };
+        }
         return admin.messaging().send(message);
     })
         .catch((err) => {
-        if (!options.fnSendPushNotificationDefaultErrorHandler) {
+        if (!__options.fnSendPushNotificationDefaultErrorHandler) {
             throw err;
         }
         else {
-            options.fnSendPushNotificationDefaultErrorHandler(err, userId);
+            __options.fnSendPushNotificationDefaultErrorHandler(err, options.userId);
         }
     });
 }
@@ -52,11 +82,11 @@ function init(opts) {
     if (!opts.databaseUrl) {
         throw new Error("databaseUrl key in opts required.");
     }
-    options = Object.assign(options, opts);
-    let serviceAccount = require(options.pathToServiceAccountKey);
+    opts = Object.assign(opts, opts);
+    let serviceAccount = require(opts.pathToServiceAccountKey);
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: options.databaseUrl
+        databaseURL: opts.databaseUrl
     });
 }
 exports.init = init;

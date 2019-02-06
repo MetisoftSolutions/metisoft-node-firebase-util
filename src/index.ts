@@ -1,5 +1,5 @@
-import Promise = require('bluebird');
-import admin = require('firebase-admin');
+import {Promise} from 'es6-promise';
+import * as admin from 'firebase-admin';
 
 
 
@@ -24,32 +24,46 @@ export interface ConfigurationOptions {
 
 
 
-let options: ConfigurationOptions = {
-      pathToServiceAccountKey: '',
-      databaseUrl: '',
+let __options: ConfigurationOptions = {
+  pathToServiceAccountKey: '',
+  databaseUrl: '',
 
-      fnGetFirebaseTokenForUser: function(userId: string): Promise<string> {
-        return Promise.resolve(userId);
-      },
+  fnGetFirebaseTokenForUser: function(userId: string): Promise<string> {
+    return Promise.resolve(userId);
+  },
 
-      fnSendPushNotificationDefaultErrorHandler: function(err: Error, userId: string) {
-        console.error(`Error sending push notification to user with ID ${userId}:`);
-        console.error(err);
-      }
-    };
+  fnSendPushNotificationDefaultErrorHandler: function(err: Error, userId: string) {
+    console.error(`Error sending push notification to user with ID ${userId}:`);
+    console.error(err);
+  }
+};
 
 
 
-export function sendPushNotification(userId: string, title: string, body: string): Promise<string|void> {
+export type IMediaType = 'image' | 'video' | 'audio';
+
+export interface IMedia {
+  url: string;
+  type: IMediaType;
+}
+
+export interface ISendPushNotificationOptions {
+  userId: string;
+  title: string;
+  body: string;
+  media?: IMedia;
+}
+
+export function sendPushNotification(options: ISendPushNotificationOptions): Promise<string | void> {
   let firebaseToken: string;
 
-  if (!options.fnGetFirebaseTokenForUser) {
+  if (!__options.fnGetFirebaseTokenForUser) {
     throw new Error('CANT_FIND_fnGetFirebaseTokenForUser');
   }
 
-  return options.fnGetFirebaseTokenForUser(userId)
+  return __options.fnGetFirebaseTokenForUser(options.userId)
 
-    .then((_firebaseToken: string|null) => {
+    .then((_firebaseToken: string | null) => {
       if (!_firebaseToken) {
         throw new Error('NO_FIREBASE_TOKEN_FOR_USER');
       }
@@ -58,21 +72,45 @@ export function sendPushNotification(userId: string, title: string, body: string
 
     .then(() => {
       let message = {
-            notification: {
-              title,
-              body
-            },
-            token: firebaseToken
-          };
+        notification: {
+          title: options.title,
+          body: options.body
+        },
+        token: firebaseToken
+      } as admin.messaging.Message;
+
+      if (options.media) {
+        message.data = {
+          // TODO {AD} likely only mediaUrl or 'attachment-url' are required. Figure this out.
+          mediaUrl: options.media.url,
+          'attachment-url': options.media.url,
+          message: options.body,
+          media_type: options.media.type
+        };
+        // Support for rich notifications on iOS
+        message.apns = {
+          payload: {
+            aps: {
+              contentAvailable: true,
+              mutableContent: true,
+              sound: 'default',
+              alert: {
+                body: options.body,
+                title: options.title
+              }
+            }
+          }
+        };
+      }
 
       return admin.messaging().send(message);
     })
 
     .catch((err: Error) => {
-      if (!options.fnSendPushNotificationDefaultErrorHandler) {
+      if (!__options.fnSendPushNotificationDefaultErrorHandler) {
         throw err;
       } else {
-        options.fnSendPushNotificationDefaultErrorHandler(err, userId);
+        __options.fnSendPushNotificationDefaultErrorHandler(err, options.userId);
       }
     });
 }
@@ -88,12 +126,12 @@ export function init(opts: ConfigurationOptions) {
     throw new Error("databaseUrl key in opts required.");
   }
 
-  options = Object.assign(options, opts);
+  opts = Object.assign(opts, opts);
 
-  let serviceAccount = require(options.pathToServiceAccountKey);
+  let serviceAccount = require(opts.pathToServiceAccountKey);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: options.databaseUrl
+    databaseURL: opts.databaseUrl
   });
 }
