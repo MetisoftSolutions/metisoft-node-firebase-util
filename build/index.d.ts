@@ -25,13 +25,13 @@ export interface IRichNotificationOptions {
     media: IMedia;
     category: string;
     badge: number;
+    sound?: string;
 }
 export interface ISendPushNotificationOptions {
     userId: string;
     title: string;
     body: string;
-    richOptions?: IRichNotificationOptions;
-    sound?: string;
+    richNotificationOptions?: IRichNotificationOptions;
 }
 export declare function sendPushNotification(options: ISendPushNotificationOptions): Promise<string | void>;
 export declare function init(opts: ConfigurationOptions): void;

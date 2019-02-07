@@ -58,7 +58,7 @@ export interface ISendPushNotificationOptions {
   userId: string;
   title: string;
   body: string;
-  richOptions?: IRichNotificationOptions;
+  richNotificationOptions?: IRichNotificationOptions;
 }
 
 export function sendPushNotification(options: ISendPushNotificationOptions): Promise<string | void> {
@@ -77,41 +77,8 @@ export function sendPushNotification(options: ISendPushNotificationOptions): Pro
       firebaseToken = _firebaseToken;
     })
 
-    .then(() => {
-      let message = {
-        notification: {
-          title: options.title,
-          body: options.body
-        },
-        token: firebaseToken
-      } as admin.messaging.Message;
-
-      if (options.richOptions) {
-        message.data = {
-          message: options.body,
-          mediaUrl: options.richOptions.media.url,
-          mediaType: options.richOptions.media.type
-        };
-        // Support for rich notifications on iOS
-        message.apns = {
-          payload: {
-            aps: {
-              contentAvailable: true,
-              mutableContent: true,
-              sound: options.richOptions.sound || 'default',
-              alert: {
-                body: options.body,
-                title: options.title,
-              },
-              badge: options.richOptions.badge,
-              category: options.richOptions.category
-            }
-          }
-        };
-      }
-
-      return admin.messaging().send(message);
-    })
+    .then(() =>
+      admin.messaging().send(__genFirebaseMessage(firebaseToken, options)))
 
     .catch((err: Error) => {
       if (!__options.fnSendPushNotificationDefaultErrorHandler) {
@@ -120,6 +87,44 @@ export function sendPushNotification(options: ISendPushNotificationOptions): Pro
         __options.fnSendPushNotificationDefaultErrorHandler(err, options.userId);
       }
     });
+}
+
+
+
+function __genFirebaseMessage(firebaseToken: string, options: ISendPushNotificationOptions) {
+  const message = {
+    notification: {
+      title: options.title,
+      body: options.body
+    },
+    token: firebaseToken
+  } as admin.messaging.Message;
+
+  if (options.richNotificationOptions) {
+    message.data = {
+      message: options.body,
+      mediaUrl: options.richNotificationOptions.media.url,
+      mediaType: options.richNotificationOptions.media.type
+    };
+    // Support for rich notifications on iOS
+    message.apns = {
+      payload: {
+        aps: {
+          contentAvailable: true,
+          mutableContent: true,
+          sound: options.richNotificationOptions.sound || 'default',
+          alert: {
+            body: options.body,
+            title: options.title,
+          },
+          badge: options.richNotificationOptions.badge,
+          category: options.richNotificationOptions.category
+        }
+      }
+    };
+  }
+
+  return message;
 }
 
 
@@ -135,10 +140,10 @@ export function init(opts: ConfigurationOptions) {
 
   __options = Object.assign(__options, opts);
 
-  let serviceAccount = require(opts.pathToServiceAccountKey);
+  let serviceAccount = require(__options.pathToServiceAccountKey);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    databaseURL: opts.databaseUrl
+    databaseURL: __options.databaseUrl
   });
 }
