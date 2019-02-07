@@ -40,11 +40,11 @@ function sendPushNotification(options) {
             },
             token: firebaseToken
         };
-        if (options.media) {
+        if (options.richOptions) {
             message.data = {
                 message: options.body,
-                mediaUrl: options.media.url,
-                mediaType: options.media.type
+                mediaUrl: options.richOptions.media.url,
+                mediaType: options.richOptions.media.type
             };
             // Support for rich notifications on iOS
             message.apns = {
@@ -52,13 +52,13 @@ function sendPushNotification(options) {
                     aps: {
                         contentAvailable: true,
                         mutableContent: true,
-                        sound: 'default',
-                        badge: 1,
+                        sound: options.richOptions.sound || 'default',
                         alert: {
                             body: options.body,
                             title: options.title,
                         },
-                        category: 'CopeifyPush'
+                        badge: options.richOptions.badge,
+                        category: options.richOptions.category
                     }
                 }
             };

@@ -16,16 +16,22 @@ export interface ConfigurationOptions {
     fnGetFirebaseTokenForUser?: (userId: string) => Promise<string>;
     fnSendPushNotificationDefaultErrorHandler?: (err: Error, userId: string) => void;
 }
-export declare type IMediaType = 'image' | 'video' | 'audio';
+export declare type IMediaType = 'video' | 'gif' | 'image' | 'audio';
 export interface IMedia {
     url: string;
     type: IMediaType;
+}
+export interface IRichNotificationOptions {
+    media: IMedia;
+    category: string;
+    badge: number;
 }
 export interface ISendPushNotificationOptions {
     userId: string;
     title: string;
     body: string;
-    media?: IMedia;
+    richOptions?: IRichNotificationOptions;
+    sound?: string;
 }
 export declare function sendPushNotification(options: ISendPushNotificationOptions): Promise<string | void>;
 export declare function init(opts: ConfigurationOptions): void;

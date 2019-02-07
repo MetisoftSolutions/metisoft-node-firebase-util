@@ -47,11 +47,18 @@ export interface IMedia {
   type: IMediaType;
 }
 
+export interface IRichNotificationOptions {
+  media: IMedia;
+  category: string;
+  badge: number;
+  sound?: string;
+}
+
 export interface ISendPushNotificationOptions {
   userId: string;
   title: string;
   body: string;
-  media?: IMedia;
+  richOptions?: IRichNotificationOptions;
 }
 
 export function sendPushNotification(options: ISendPushNotificationOptions): Promise<string | void> {
@@ -79,11 +86,11 @@ export function sendPushNotification(options: ISendPushNotificationOptions): Pro
         token: firebaseToken
       } as admin.messaging.Message;
 
-      if (options.media) {
+      if (options.richOptions) {
         message.data = {
           message: options.body,
-          mediaUrl: options.media.url,
-          mediaType: options.media.type
+          mediaUrl: options.richOptions.media.url,
+          mediaType: options.richOptions.media.type
         };
         // Support for rich notifications on iOS
         message.apns = {
@@ -91,13 +98,13 @@ export function sendPushNotification(options: ISendPushNotificationOptions): Pro
             aps: {
               contentAvailable: true,
               mutableContent: true,
-              sound: 'default',
-              badge: 1,
+              sound: options.richOptions.sound || 'default',
               alert: {
                 body: options.body,
                 title: options.title,
               },
-              category: 'CopeifyPush'
+              badge: options.richOptions.badge,
+              category: options.richOptions.category
             }
           }
         };
