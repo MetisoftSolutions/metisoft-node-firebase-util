@@ -40,7 +40,7 @@ let __options: ConfigurationOptions = {
 
 
 
-export type IMediaType = 'image' | 'video' | 'audio';
+export type IMediaType = 'video' | 'gif' | 'image' | 'audio';
 
 export interface IMedia {
   url: string;
@@ -81,11 +81,9 @@ export function sendPushNotification(options: ISendPushNotificationOptions): Pro
 
       if (options.media) {
         message.data = {
-          // TODO {AD} likely only mediaUrl or 'attachment-url' are required. Figure this out.
-          mediaUrl: options.media.url,
-          'attachment-url': options.media.url,
           message: options.body,
-          media_type: options.media.type
+          mediaUrl: options.media.url,
+          mediaType: options.media.type
         };
         // Support for rich notifications on iOS
         message.apns = {
@@ -94,10 +92,12 @@ export function sendPushNotification(options: ISendPushNotificationOptions): Pro
               contentAvailable: true,
               mutableContent: true,
               sound: 'default',
+              badge: 1,
               alert: {
                 body: options.body,
-                title: options.title
-              }
+                title: options.title,
+              },
+              category: 'CopeifyPush'
             }
           }
         };
@@ -126,7 +126,7 @@ export function init(opts: ConfigurationOptions) {
     throw new Error("databaseUrl key in opts required.");
   }
 
-  opts = Object.assign(opts, opts);
+  opts = Object.assign(__options, opts);
 
   let serviceAccount = require(opts.pathToServiceAccountKey);
 

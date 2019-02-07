@@ -42,11 +42,9 @@ function sendPushNotification(options) {
         };
         if (options.media) {
             message.data = {
-                // TODO {AD} likely only mediaUrl or 'attachment-url' are required. Figure this out.
-                mediaUrl: options.media.url,
-                'attachment-url': options.media.url,
                 message: options.body,
-                media_type: options.media.type
+                mediaUrl: options.media.url,
+                mediaType: options.media.type
             };
             // Support for rich notifications on iOS
             message.apns = {
@@ -55,10 +53,12 @@ function sendPushNotification(options) {
                         contentAvailable: true,
                         mutableContent: true,
                         sound: 'default',
+                        badge: 1,
                         alert: {
                             body: options.body,
-                            title: options.title
-                        }
+                            title: options.title,
+                        },
+                        category: 'CopeifyPush'
                     }
                 }
             };
@@ -82,7 +82,7 @@ function init(opts) {
     if (!opts.databaseUrl) {
         throw new Error("databaseUrl key in opts required.");
     }
-    opts = Object.assign(opts, opts);
+    opts = Object.assign(__options, opts);
     let serviceAccount = require(opts.pathToServiceAccountKey);
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
