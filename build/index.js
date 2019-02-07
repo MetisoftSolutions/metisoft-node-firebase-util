@@ -82,7 +82,7 @@ function init(opts) {
     if (!opts.databaseUrl) {
         throw new Error("databaseUrl key in opts required.");
     }
-    opts = Object.assign(__options, opts);
+    __options = Object.assign(__options, opts);
     let serviceAccount = require(opts.pathToServiceAccountKey);
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
