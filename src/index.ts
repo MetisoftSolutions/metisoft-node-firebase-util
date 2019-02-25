@@ -59,6 +59,7 @@ export interface ISendPushNotificationOptions {
   title: string;
   body: string;
   richNotificationOptions?: IRichNotificationOptions;
+  extraData?: any;
 }
 
 export function sendPushNotification(options: ISendPushNotificationOptions): Promise<string | void> {
@@ -104,7 +105,8 @@ function __genFirebaseMessage(firebaseToken: string, options: ISendPushNotificat
     message.data = {
       message: options.body,
       mediaUrl: options.richNotificationOptions.media.url,
-      mediaType: options.richNotificationOptions.media.type
+      mediaType: options.richNotificationOptions.media.type,
+      extraData: JSON.stringify(options.extraData)
     };
     // Support for rich notifications on iOS
     message.apns = {

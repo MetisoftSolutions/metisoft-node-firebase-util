@@ -32,6 +32,7 @@ export interface ISendPushNotificationOptions {
     title: string;
     body: string;
     richNotificationOptions?: IRichNotificationOptions;
+    extraData?: any;
 }
 export declare function sendPushNotification(options: ISendPushNotificationOptions): Promise<string | void>;
 export declare function init(opts: ConfigurationOptions): void;

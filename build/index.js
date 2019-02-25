@@ -55,7 +55,8 @@ function __genFirebaseMessage(firebaseToken, options) {
         message.data = {
             message: options.body,
             mediaUrl: options.richNotificationOptions.media.url,
-            mediaType: options.richNotificationOptions.media.type
+            mediaType: options.richNotificationOptions.media.type,
+            extraData: JSON.stringify(options.extraData)
         };
         // Support for rich notifications on iOS
         message.apns = {
